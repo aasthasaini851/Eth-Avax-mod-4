@@ -1,0 +1,55 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// Importing ERC20 and Ownable from OpenZeppelin library
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+// Defining the DegenGamingToken contract
+contract DegenGamingToken is ERC20, Ownable {
+    uint256 public rewardPool; // Variable to store reward pool amount
+
+    // Constructor to initialize the token with a name, initial supply, and owner
+    constructor(uint256 initialSupply, address initialOwner) 
+        ERC20("Aastha", "") Ownable(initialOwner) 
+    {
+        _mint(msg.sender, initialSupply); // Minting the initial supply to the contract deployer
+        rewardPool = 10000; // Setting the initial reward pool amount
+    }
+
+    // Function to mint new tokens, can only be called by the owner
+    function createTokens(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount);
+    }
+
+    // Function to redeem tokens from the reward pool
+    function claimReward() public {
+        // Check if the caller has enough balance to claim
+        require(balanceOf(msg.sender) >= rewardPool, "Insufficient balance");
+        // Check if reward pool is available
+        require(rewardPool > 0, "Reward pool is not available");
+
+        uint256 claimedAmount = rewardPool; // Store the reward pool amount to be claimed
+        // Reduce the reward pool by 10% after each claim
+        rewardPool = (rewardPool * 9) / 10;
+
+        // Transfer the claimed amount of tokens from the caller to the owner
+        _transfer(msg.sender, owner(), claimedAmount);
+
+        // Emit an event to log the reward claim
+        emit RewardClaimed(msg.sender, claimedAmount, rewardPool);
+    }
+
+    // Function to burn tokens, reducing the total supply
+    function destroyTokens(uint256 amount) public {
+        _burn(msg.sender, amount);
+    }
+
+    // Function to check the token balance of an account
+    function getBalance(address account) public view returns (uint256) {
+        return balanceOf(account);
+    }
+
+    // Event to log the reward claim details
+    event RewardClaimed(address indexed user, uint256 claimedAmount, uint256 newRewardPool);
+}
